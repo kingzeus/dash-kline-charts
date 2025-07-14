@@ -19,11 +19,16 @@ def create_sample_data(count=100):
         change = random.uniform(-2, 2)
         price += change
 
-        # 生成 OHLC 数据
+        # 生成 OHLC 数据 (确保正确的价格关系)
         open_price = price
-        high_price = price + random.uniform(0, 1)
-        low_price = price - random.uniform(0, 1)
-        close_price = price + random.uniform(-0.5, 0.5)
+        close_price = price + random.uniform(-1, 1)
+        
+        # 确保 high 是 open 和 close 中的较大值，再加上一些随机增量
+        high_price = max(open_price, close_price) + random.uniform(0, 1)
+        
+        # 确保 low 是 open 和 close 中的较小值，再减去一些随机增量
+        low_price = min(open_price, close_price) - random.uniform(0, 1)
+        
         volume = random.randint(1000, 10000)
 
         data.append(
