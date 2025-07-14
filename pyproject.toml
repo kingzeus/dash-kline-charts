@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dash-kline-charts"
-version = "0.1.0"
+version = "0.1.1"
 description = "A Dash component for displaying financial charts using KLineChart"
 readme = "README.md"
 requires-python = ">=3.7"
