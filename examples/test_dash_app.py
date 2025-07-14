@@ -22,23 +22,23 @@ def create_sample_data(count=100):
         # 生成 OHLC 数据 (确保正确的价格关系)
         open_price = price
         close_price = price + random.uniform(-1, 1)
-        
+
         # 确保 high 是 open 和 close 中的较大值，再加上一些随机增量
         high_price = max(open_price, close_price) + random.uniform(0, 1)
-        
+
         # 确保 low 是 open 和 close 中的较小值，再减去一些随机增量
         low_price = min(open_price, close_price) - random.uniform(0, 1)
-        
+
         volume = random.randint(1000, 10000)
 
         data.append(
             {
                 "timestamp": timestamp,
-                "open": round(open_price, 2),
-                "high": round(high_price, 2),
-                "low": round(low_price, 2),
+                # "open": round(close_price, 2),
+                # "high": round(close_price, 2),
+                # "low": round(close_price, 2),
                 "close": round(close_price, 2),
-                "volume": volume,
+                # "volume": volume,
             }
         )
 
@@ -66,6 +66,7 @@ app.layout = html.Div(
                     config={
                         "theme": "light",
                         "grid": {"show": True},
+                        "candle": {"type": "area"},
                         "crosshair": {"show": True},
                     },
                     style={"width": "100%", "height": "400px"},

@@ -70,30 +70,39 @@ import PropTypes from 'prop-types';
 // };
 
 // 工具函数：数据验证
-const validateKLineData = (data) => {
+const validateKLineData = (data, chartType = 'candle') => {
     if (!Array.isArray(data)) return false;
 
     // 允许空数组
     if (data.length === 0) return true;
 
-    return data.every(item =>
-        item !== null &&
-        typeof item === 'object' &&
-        'timestamp' in item &&
-        'open' in item &&
-        'high' in item &&
-        'low' in item &&
-        'close' in item &&
-        typeof item.timestamp === 'number' &&
-        typeof item.open === 'number' &&
-        typeof item.high === 'number' &&
-        typeof item.low === 'number' &&
-        typeof item.close === 'number' &&
-        item.high >= item.low &&
-        item.open >= item.low && item.open <= item.high &&
-        item.close >= item.low && item.close <= item.high &&
-        (!('volume' in item) || typeof item.volume === 'number')
-    );
+    // 获取图表类型，支持通过 config.candle.type 传递
+    const type = typeof chartType === 'object' && chartType.candle?.type ? chartType.candle.type : chartType;
+
+    return data.every(item => {
+        if (item === null || typeof item !== 'object' || !('timestamp' in item) || typeof item.timestamp !== 'number') {
+            return false;
+        }
+
+        // 对于面积图（area），只需要 timestamp 和 close
+        if (type === 'area') {
+            return 'close' in item && typeof item.close === 'number';
+        }
+
+        // 对于蜡烛图（candle）和其他类型，需要完整的 OHLC 数据
+        return 'open' in item &&
+            'high' in item &&
+            'low' in item &&
+            'close' in item &&
+            typeof item.open === 'number' &&
+            typeof item.high === 'number' &&
+            typeof item.low === 'number' &&
+            typeof item.close === 'number' &&
+            item.high >= item.low &&
+            item.open >= item.low && item.open <= item.high &&
+            item.close >= item.low && item.close <= item.high &&
+            (!('volume' in item) || typeof item.volume === 'number');
+    });
 };
 
 // 工具函数：获取主题配置
@@ -207,7 +216,7 @@ const DashKLineChart = ({
     );
 
     // 验证数据
-    const isValidData = useMemo(() => validateKLineData(data), [data]);
+    const isValidData = useMemo(() => validateKLineData(data, mergedConfig), [data, mergedConfig]);
 
     // 初始化图表
     const initializeChart = useCallback(() => {
