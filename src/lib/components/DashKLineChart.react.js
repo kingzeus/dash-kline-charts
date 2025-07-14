@@ -177,6 +177,14 @@ const DashKLineChart = ({
     const containerRef = useRef(null);
     const chartRef = useRef(null);
 
+    // 规范化数据：确保 null 和 undefined 被转换为空数组
+    const normalizedData = useMemo(() => {
+        if (data === null || data === undefined) {
+            return [];
+        }
+        return Array.isArray(data) ? data : [];
+    }, [data]);
+
     // 默认配置
     const defaultConfig = useMemo(() => ({
         theme: 'light',
@@ -215,8 +223,8 @@ const DashKLineChart = ({
         [mergedConfig.theme]
     );
 
-    // 验证数据
-    const isValidData = useMemo(() => validateKLineData(data, mergedConfig), [data, mergedConfig]);
+    // 验证数据（使用规范化后的数据）
+    const isValidData = useMemo(() => validateKLineData(normalizedData, mergedConfig), [normalizedData, mergedConfig]);
 
     // 初始化图表
     const initializeChart = useCallback(() => {
@@ -262,7 +270,7 @@ const DashKLineChart = ({
                 getBars: (params) => {
                     // 根据参数类型处理数据
                     if (params.type === 'init' || params.type === 'update') {
-                        params.callback(data, false);
+                        params.callback(normalizedData, false);
                     } else if (params.type === 'forward' || params.type === 'backward') {
                         // 对于前向/后向加载，返回空数组表示没有更多数据
                         params.callback([], false);
@@ -279,7 +287,7 @@ const DashKLineChart = ({
         } catch (error) {
             console.error('Failed to initialize chart:', error);
         }
-    }, [data, mergedConfig, indicators, isValidData, theme, symbol, updateChartStyles, updateChartIndicators]);
+    }, [normalizedData, mergedConfig, indicators, isValidData, theme, symbol, updateChartStyles, updateChartIndicators]);
 
     // 更新图表数据
     const updateChartData = useCallback(() => {
@@ -290,7 +298,7 @@ const DashKLineChart = ({
             chartRef.current.setDataLoader({
                 getBars: (params) => {
                     if (params.type === 'init' || params.type === 'update') {
-                        params.callback(data, false);
+                        params.callback(normalizedData, false);
                     } else if (params.type === 'forward' || params.type === 'backward') {
                         params.callback([], false);
                     }
@@ -299,7 +307,7 @@ const DashKLineChart = ({
         } catch (error) {
             console.error('Failed to update chart data:', error);
         }
-    }, [data, isValidData]);
+    }, [normalizedData, isValidData]);
 
     // 更新图表样式
     const updateChartStyles = useCallback((chartInstance, config, themeConfig) => {
@@ -441,7 +449,7 @@ const DashKLineChart = ({
 
     // 初始化图表
     useEffect(() => {
-        if (!isValidData || data.length === 0) {
+        if (!isValidData || normalizedData.length === 0) {
             return;
         }
 
@@ -452,7 +460,7 @@ const DashKLineChart = ({
         return () => {
             clearTimeout(timer);
         };
-    }, [initializeChart, isValidData, data.length]);
+    }, [initializeChart, isValidData, normalizedData.length]);
 
     // 更新数据
     useEffect(() => {
@@ -499,7 +507,7 @@ const DashKLineChart = ({
     const resizeRef = useResizeObserver(handleResize);
 
     // 错误处理：数据格式错误
-    if (!isValidData && data.length > 0) {
+    if (!isValidData && normalizedData.length > 0) {
         return (
             <div
                 id={id}
@@ -531,7 +539,7 @@ const DashKLineChart = ({
     }
 
     // 空数据状态
-    if (!data || data.length === 0) {
+    if (!normalizedData || normalizedData.length === 0) {
         return (
             <div
                 id={id}

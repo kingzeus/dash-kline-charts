@@ -308,4 +308,28 @@ describe('DashKLineChart', () => {
         expect(chartElement).toHaveClass('dash-kline-chart-empty');
         expect(chartElement.textContent).toContain('暂无数据');
     });
+
+    test('handles null data same as empty data', () => {
+        render(<DashKLineChart id="null-data-chart" data={null} />);
+        const chartElement = document.getElementById('null-data-chart');
+        expect(chartElement).toBeInTheDocument();
+        expect(chartElement).toHaveClass('dash-kline-chart-empty');
+        expect(chartElement.textContent).toContain('暂无数据');
+    });
+
+    test('handles undefined data same as empty data', () => {
+        render(<DashKLineChart id="undefined-data-chart" data={undefined} />);
+        const chartElement = document.getElementById('undefined-data-chart');
+        expect(chartElement).toBeInTheDocument();
+        expect(chartElement).toHaveClass('dash-kline-chart-empty');
+        expect(chartElement.textContent).toContain('暂无数据');
+    });
+
+    test('handles non-array data gracefully', () => {
+        render(<DashKLineChart id="non-array-data-chart" data="not an array" />);
+        const chartElement = document.getElementById('non-array-data-chart');
+        expect(chartElement).toBeInTheDocument();
+        expect(chartElement).toHaveClass('dash-kline-chart-empty');
+        expect(chartElement.textContent).toContain('暂无数据');
+    });
 });

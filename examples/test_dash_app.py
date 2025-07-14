@@ -34,11 +34,11 @@ def create_sample_data(count=100):
         data.append(
             {
                 "timestamp": timestamp,
-                # "open": round(close_price, 2),
-                # "high": round(close_price, 2),
-                # "low": round(close_price, 2),
+                "open": round(open_price, 2),
+                "high": round(high_price, 2),
+                "low": round(low_price, 2),
                 "close": round(close_price, 2),
-                # "volume": volume,
+                "volume": volume,
             }
         )
 
@@ -48,21 +48,81 @@ def create_sample_data(count=100):
     return data
 
 
+# 创建面积图数据（只需要 timestamp 和 close）
+def create_area_data(count=50):
+    """创建面积图数据"""
+    data = []
+    timestamp = int(
+        (datetime.datetime.now() - datetime.timedelta(days=count)).timestamp() * 1000
+    )
+    price = 100.0
+
+    for i in range(count):
+        # 模拟价格变化
+        change = random.uniform(-2, 2)
+        price += change
+
+        data.append(
+            {
+                "timestamp": timestamp,
+                "close": round(price, 2),
+            }
+        )
+
+        timestamp += 86400 * 1000  # 增加1天
+
+    return data
+
+
 # 创建应用
 app = dash.Dash(__name__)
 
 # 生成示例数据
 sample_data = create_sample_data(50)
+area_data = create_area_data(30)
 
 app.layout = html.Div(
     [
         html.H1("Dash KLineChart 测试", style={"textAlign": "center"}),
         html.Div(
             [
-                html.H3("基础K线图"),
+                html.H3("空数据测试 (data=None)"),
                 DashKLineChart(
-                    id="kline-chart-basic",
-                    data=sample_data,
+                    id="kline-chart-none",
+                    data=None,
+                    config={
+                        "theme": "light",
+                        "grid": {"show": True},
+                        "candle": {"type": "candle_solid"},
+                        "crosshair": {"show": True},
+                    },
+                    style={"width": "100%", "height": "400px"},
+                ),
+            ],
+            style={"margin": "20px"},
+        ),
+        html.Div(
+            [
+                html.H3("空数据测试 (不传data参数)"),
+                DashKLineChart(
+                    id="kline-chart-empty",
+                    config={
+                        "theme": "light",
+                        "grid": {"show": True},
+                        "candle": {"type": "candle_solid"},
+                        "crosshair": {"show": True},
+                    },
+                    style={"width": "100%", "height": "400px"},
+                ),
+            ],
+            style={"margin": "20px"},
+        ),
+        html.Div(
+            [
+                html.H3("面积图 (area chart)"),
+                DashKLineChart(
+                    id="kline-chart-area",
+                    data=area_data,
                     config={
                         "theme": "light",
                         "grid": {"show": True},
@@ -123,7 +183,7 @@ app.layout = html.Div(
 
 @app.callback(Output("data-info", "children"), Input("refresh-btn", "n_clicks"))
 def update_data_info(n_clicks):
-    return f"数据点数量: {len(sample_data)}, 刷新次数: {n_clicks}"
+    return f"蜡烛图数据点数量: {len(sample_data)}, 面积图数据点数量: {len(area_data)}, 刷新次数: {n_clicks}"
 
 
 if __name__ == "__main__":
