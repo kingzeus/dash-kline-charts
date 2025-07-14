@@ -14,6 +14,10 @@ if [ "$CURRENT_BRANCH" != "main" ]; then
     exit 1
 fi
 
+# 读取版本号
+VERSION=$(python -c "import sys; sys.path.insert(0, 'dash_kline_charts'); from _version import __version__; print(__version__)")
+echo "📌 Building version: $VERSION"
+
 # 检查工作区是否干净
 # if [ -n "$(git status --porcelain)" ]; then
 #     echo "❌ Working directory is not clean. Please commit your changes first."
@@ -57,8 +61,10 @@ if [ ! -f "dash_kline_charts/dash_kline_charts.min.js" ]; then
     exit 1
 fi
 
-if [ ! -f "dist/dash_kline_charts-0.1.0.tar.gz" ]; then
-    echo "❌ Python build failed"
+if [ ! -f "dist/dash_kline_charts-${VERSION}.tar.gz" ]; then
+    echo "❌ Python build failed - expected dist/dash_kline_charts-${VERSION}.tar.gz"
+    echo "📂 Available files in dist/:"
+    ls -la dist/ 2>/dev/null || echo "No dist directory found"
     exit 1
 fi
 
