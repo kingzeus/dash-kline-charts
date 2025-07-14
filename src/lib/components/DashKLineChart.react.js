@@ -154,15 +154,31 @@ const useResizeObserver = (callback) => {
 };
 
 /**
- * DashKLineChart is a Dash component for displaying financial charts using KLineChart v10.
- * It takes data in OHLC format and renders a beautiful, interactive candlestick chart.
+ * DashKLineChart 是一个使用 KLineChart v10 显示金融图表的 Dash 组件。
+ * 它接受 OHLC 格式的数据，并渲染出美观的交互式蜡烛图。
  *
- * Performance optimizations:
- * - useMemo and useCallback for performance optimization
- * - Separated initialization, data updates, config updates, and indicator updates
- * - ResizeObserver for responsive design
- * - Improved error handling and lifecycle management
- * - Better memory management and resource cleanup
+ * 功能特性：
+ * - 多种图表类型：蜡烛图、面积图、线图
+ * - 技术指标：MA、RSI、MACD 等
+ * - 交互式十字线和缩放功能
+ * - 明暗主题
+ * - 响应式设计，自动调整大小
+ * - 实时数据更新
+ *
+ * @example
+ * ```python
+ * import dash_kline_charts as dkc
+ *
+ * dkc.DashKLineChart(
+ *     id='my-chart',
+ *     data=[
+ *         {'timestamp': 1609459200000, 'open': 100, 'high': 110, 'low': 90, 'close': 105, 'volume': 1000},
+ *         # ... more data
+ *     ],
+ *     config={'theme': 'dark', 'grid': {'show': True}},
+ *     indicators=[{'name': 'MA', 'params': [5, 10, 20]}]
+ * )
+ * ```
  */
 const DashKLineChart = ({
     id,
@@ -255,13 +271,18 @@ const DashKLineChart = ({
 
             // 设置Symbol和Period（v10必需配置）
             chartInstance.setSymbol({
+                // 交易对唯一标识
                 ticker: symbol || 'DASH-KLINE',
+                // 价格精度
                 pricePrecision: 2,
+                // 数量精度
                 volumePrecision: 0,
             });
 
             chartInstance.setPeriod({
+                // 类型 支持 second ， minute ， hour ， day ， week ， month 和 year
                 type: 'day',
+                // 时间跨度
                 span: 1,
             });
 
@@ -560,7 +581,7 @@ const DashKLineChart = ({
                 <div style={{ textAlign: 'center' }}>
                     <div style={{ fontSize: '48px', marginBottom: '10px' }}>📈</div>
                     <h3 style={{ margin: '0 0 10px 0', color: '#666' }}>暂无数据</h3>
-                    <p style={{ margin: 0, fontSize: '14px' }}>请提供K线数据以显示图表</p>
+                    <p style={{ margin: 0, fontSize: '14px' }}>请提供数据以显示图表</p>
                 </div>
             </div>
         );
@@ -600,44 +621,64 @@ DashKLineChart.defaultProps = {
 
 DashKLineChart.propTypes = {
     /**
-     * The ID used to identify this component in Dash callbacks.
+     * 用于在 Dash 回调中识别此组件的 ID。
      */
     id: PropTypes.string,
 
     /**
-     * The K-line data in OHLC format. Each item should be an object with:
-     * - timestamp (number): Timestamp in milliseconds
-     * - open (number): Opening price
-     * - high (number): Highest price
-     * - low (number): Lowest price
-     * - close (number): Closing price
-     * - volume (number, optional): Trading volume
+     * OHLC 格式的 K 线数据。每个数据项应该是一个包含以下字段的对象：
+     * - timestamp (number): 时间戳（毫秒）
+     * - open (number): 开盘价, 面积图时可忽略
+     * - high (number): 最高价, 面积图时可忽略
+     * - low (number): 最低价, 面积图时可忽略
+     * - close (number): 收盘价
+     * - volume (number, 可选): 交易量
      */
     data: PropTypes.arrayOf(PropTypes.shape({
         timestamp: PropTypes.number.isRequired,
-        open: PropTypes.number.isRequired,
-        high: PropTypes.number.isRequired,
-        low: PropTypes.number.isRequired,
+        open: PropTypes.number,
+        high: PropTypes.number,
+        low: PropTypes.number,
         close: PropTypes.number.isRequired,
         volume: PropTypes.number
     })),
 
     /**
-     * Chart configuration options including:
-     * - theme (string): Chart theme ('light' or 'dark')
-     * - grid (object): Grid configuration
-     * - candle (object): Candle configuration
-     * - crosshair (object): Crosshair configuration
-     * - yAxis (object): Y-axis configuration
-     * - xAxis (object): X-axis configuration
+     * 图表配置选项。此对象允许您自定义图表外观和行为。
+     *
+     * 可用选项：
+     * - theme (string): 图表主题（'light' 或 'dark'）。默认：'light'
+     * - grid (object): 网格配置
+     *   - show (boolean): 是否显示网格线
+     *   - horizontal (object): 水平网格线设置
+     *   - vertical (object): 垂直网格线设置
+     * - candle (object): 蜡烛图/图表类型配置
+     *   - type (string): 图表类型（'candle_solid', 'area', 'line'）
+     * - crosshair (object): 十字线配置
+     *   - show (boolean): 是否显示十字线
+     *   - horizontal/vertical (object): 十字线设置
+     * - yAxis (object): Y 轴配置
+     *   - show (boolean): 是否显示 Y 轴
+     *   - position (string): Y 轴位置（'left' 或 'right'）
+     * - xAxis (object): X 轴配置
+     *   - show (boolean): 是否显示 X 轴
+     *   - position (string): X 轴位置（'top' 或 'bottom'）
+     *
+     * @example
+     * config={
+     *   'theme': 'dark',
+     *   'grid': {'show': True, 'horizontal': {'show': True}},
+     *   'candle': {'type': 'area'},
+     *   'crosshair': {'show': True}
+     * }
      */
     config: PropTypes.object,
 
     /**
-     * Technical indicators configuration. Each item should be an object with:
-     * - name (string): Indicator name (e.g., 'MA', 'RSI', 'MACD')
-     * - params (array): Indicator parameters
-     * - visible (boolean, optional): Whether the indicator is visible
+     * 技术指标配置。每个指标项应该是一个包含以下字段的对象：
+     * - name (string): 指标名称（例如：'MA', 'RSI', 'MACD'）
+     * - params (array): 指标参数
+     * - visible (boolean, 可选): 指标是否可见
      */
     indicators: PropTypes.arrayOf(PropTypes.shape({
         name: PropTypes.string.isRequired,
@@ -646,24 +687,33 @@ DashKLineChart.propTypes = {
     })),
 
     /**
-     * Symbol information for the chart
+     * 图表的交易品种信息
      */
     symbol: PropTypes.string,
 
     /**
-     * CSS style properties
+     * CSS 样式属性
      */
     style: PropTypes.object,
 
     /**
-     * CSS class name
+     * CSS 类名
      */
     className: PropTypes.string,
 
     /**
-     * Whether to enable responsive design
+     * 是否启用响应式设计。启用后，当窗口或容器大小发生变化时，
+     * 图表将自动调整大小以适应其容器。
+     *
+     * @default true
      */
-    responsive: PropTypes.bool
+    responsive: PropTypes.bool,
+
+    /**
+     * Dash 分配的回调函数，应该被调用以向 Dash 报告属性更改，
+     * 使它们可用于回调。
+     */
+    setProps: PropTypes.func
 };
 
 export default DashKLineChart;
