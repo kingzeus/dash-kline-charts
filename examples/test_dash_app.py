@@ -89,7 +89,7 @@ app.layout = html.Div(
                 html.H3("空数据测试 (data=None)"),
                 DashKLineChart(
                     id="kline-chart-none",
-                    data=None,
+                    data=sample_data,
                     config={
                         "theme": "light",
                         "grid": {"show": True},

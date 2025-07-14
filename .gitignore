@@ -138,6 +138,14 @@ CLAUDE.md
 # R package specific
 .Rbuildignore
 
-# build output
+# Build outputs
 deps/
-dash_kline_charts/
+
+# Dash component build outputs (keep source files, ignore generated ones)
+dash_kline_charts/DashKLineChart.py
+dash_kline_charts/_imports_.py
+dash_kline_charts/metadata.json
+dash_kline_charts/package-info.json
+dash_kline_charts/*.min.js
+dash_kline_charts/*.min.js.map
+dash_kline_charts/__pycache__/
