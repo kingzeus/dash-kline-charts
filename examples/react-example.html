@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>React DashKLineChart Example</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .chart-container {
+        margin: 20px 0;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .controls {
+        margin-bottom: 20px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      button {
+        padding: 8px 16px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background: white;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      button:hover {
+        background-color: #f0f0f0;
+      }
+      button.active {
+        background-color: #007bff;
+        color: white;
+      }
+      .error {
+        color: #dc3545;
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        padding: 12px;
+        border-radius: 4px;
+        margin: 10px 0;
+      }
+      .info {
+        color: #004085;
+        background-color: #cce5ff;
+        border: 1px solid #b3d4fc;
+        padding: 12px;
+        border-radius: 4px;
+        margin: 10px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>React DashKLineChart Test</h1>
+
+      <div class="info">
+        <strong>测试目标:</strong> 验证 DashKLineChart 组件的 JavaScript
+        部分是否正常工作
+      </div>
+
+      <div class="controls">
+        <button id="lightTheme" class="active">Light Theme</button>
+        <button id="darkTheme">Dark Theme</button>
+        <button id="addMA">Add MA</button>
+        <button id="addEMA">Add EMA</button>
+        <button id="refresh">Refresh Data</button>
+      </div>
+
+      <div class="chart-container">
+        <div id="chart-root"></div>
+      </div>
+
+      <div id="error-log"></div>
+    </div>
+
+    <!-- 加载 KLineChart 库 -->
+    <script src="./klinecharts.min.js"></script>
+
+    <!-- 加载 React 和 ReactDOM -->
+    <script
+      crossorigin
+      src="https://unpkg.com/react@18/umd/react.development.js"
+    ></script>
+    <script
+      crossorigin
+      src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
+    ></script>
+
+    <!-- 加载 Babel for JSX 转换 -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script type="text/babel">
+      const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+      // 简化的图表管理
+
+      const useResizeObserver = (callback) => {
+        const ref = useRef(null);
+
+        useEffect(() => {
+          if (!ref.current) return;
+
+          const observer = new ResizeObserver(callback);
+          observer.observe(ref.current);
+
+          return () => observer.disconnect();
+        }, [callback]);
+
+        return ref;
+      };
+
+      // 工具函数
+      const validateKLineData = (data) => {
+        if (!Array.isArray(data) || data.length === 0) return false;
+
+        return data.every(
+          (item) =>
+            item &&
+            typeof item.timestamp === "number" &&
+            typeof item.open === "number" &&
+            typeof item.high === "number" &&
+            typeof item.low === "number" &&
+            typeof item.close === "number"
+        );
+      };
+
+      const getTheme = (theme) => {
+        const themes = {
+          light: {
+            background: "#ffffff",
+            text: "#333333",
+            grid: "#e0e0e0",
+            candle: {
+              up: "#26A69A",
+              down: "#EF5350",
+              noChange: "#888888",
+            },
+          },
+          dark: {
+            background: "#1e1e1e",
+            text: "#ffffff",
+            grid: "#444444",
+            candle: {
+              up: "#4caf50",
+              down: "#f44336",
+              noChange: "#888888",
+            },
+          },
+        };
+        return themes[theme] || themes.light;
+      };
+
+      const mergeConfig = (defaultConfig, userConfig) => {
+        return { ...defaultConfig, ...userConfig };
+      };
+
+      // 生成测试数据
+      const generateTestData = (count = 100) => {
+        const data = [];
+        let timestamp = Date.now() - count * 24 * 60 * 60 * 1000;
+        let lastClose = 100;
+
+        for (let i = 0; i < count; i++) {
+          const change = (Math.random() - 0.5) * 4;
+          const open = lastClose + change;
+          const high = Math.max(open + Math.random() * 2, open);
+          const low = Math.min(open - Math.random() * 2, open);
+          const close = low + Math.random() * (high - low);
+
+          // 确保数据格式正确
+          const klineData = {
+            timestamp: timestamp + i * 24 * 60 * 60 * 1000,
+            open: Number(open.toFixed(2)),
+            high: Number(high.toFixed(2)),
+            low: Number(low.toFixed(2)),
+            close: Number(close.toFixed(2)),
+            volume: Math.floor(Math.random() * 1000000),
+          };
+
+          // 验证数据有效性
+          if (klineData.high >= klineData.low &&
+              klineData.open >= klineData.low && klineData.open <= klineData.high &&
+              klineData.close >= klineData.low && klineData.close <= klineData.high) {
+            data.push(klineData);
+          }
+
+          lastClose = close;
+        }
+
+        // console.log("生成的数据样本:", data.slice(0, 3));
+        return data;
+      };
+
+      // DashKLineChart 组件 (简化版)
+      const DashKLineChart = ({
+        id,
+        data = [],
+        config = {},
+        indicators = [],
+        style = {},
+        className = "",
+        responsive = true,
+      }) => {
+        const containerRef = useRef(null);
+        const chartRef = useRef(null);
+
+        // 默认配置
+        const defaultConfig = useMemo(
+          () => ({
+            theme: "light",
+            grid: {
+              show: true,
+              horizontal: { show: true },
+              vertical: { show: true },
+            },
+            candle: {
+              type: "candle_solid",
+              bar: {
+                upColor: "#26A69A",
+                downColor: "#EF5350",
+                noChangeColor: "#888888",
+              },
+            },
+            crosshair: {
+              show: true,
+              horizontal: { show: true },
+              vertical: { show: true },
+            },
+            yAxis: {
+              show: true,
+              position: "right",
+            },
+            xAxis: {
+              show: true,
+              position: "bottom",
+            },
+          }),
+          []
+        );
+
+        // 合并配置
+        const mergedConfig = useMemo(
+          () => mergeConfig(defaultConfig, config),
+          [defaultConfig, config]
+        );
+
+        // 获取主题
+        const theme = useMemo(
+          () => getTheme(mergedConfig.theme),
+          [mergedConfig.theme]
+        );
+
+        // 验证数据
+        const isValidData = useMemo(() => validateKLineData(data), [data]);
+
+                // 初始化图表
+        const initializeChart = useCallback(() => {
+          if (!containerRef.current || !isValidData) return;
+
+          try {
+            // 检查klinecharts是否可用
+            if (!window.klinecharts) {
+              console.error("KLineCharts library not available");
+              return;
+            }
+
+            // 销毁旧图表
+            if (chartRef.current) {
+              klinecharts.dispose(containerRef.current);
+              chartRef.current = null;
+            }
+
+            // 创建新图表
+            const chartInstance = klinecharts.init(containerRef.current);
+
+            if (!chartInstance) {
+              console.error("Failed to initialize chart instance");
+              return;
+            }
+
+            chartRef.current = chartInstance;
+
+            // 设置图表样式
+            chartInstance.setStyles({
+              grid: {
+                show: mergedConfig.grid?.show ?? true,
+                horizontal: {
+                  show: mergedConfig.grid?.horizontal?.show ?? true,
+                  color: theme.grid,
+                },
+                vertical: {
+                  show: mergedConfig.grid?.vertical?.show ?? true,
+                  color: theme.grid,
+                },
+              },
+              candle: {
+                type: mergedConfig.candle?.type ?? "candle_solid",
+                bar: {
+                  upColor: theme.candle.up,
+                  downColor: theme.candle.down,
+                  noChangeColor: theme.candle.noChange,
+                },
+              },
+              crosshair: {
+                show: mergedConfig.crosshair?.show ?? true,
+                horizontal: {
+                  show: mergedConfig.crosshair?.horizontal?.show ?? true,
+                },
+                vertical: {
+                  show: mergedConfig.crosshair?.vertical?.show ?? true,
+                },
+              },
+            });
+
+            // 设置Symbol和Period（v10必需配置）
+            chartInstance.setSymbol({
+              ticker: "DASH-KLINE",
+              pricePrecision: 2,
+              volumePrecision: 0,
+            });
+
+            chartInstance.setPeriod({
+              type: "day",
+              span: 1,
+            });
+
+            // 设置数据加载器（v10新API）
+            chartInstance.setDataLoader({
+              getBars: (params) => {
+                // 根据参数类型处理数据
+                if (params.type === "init" || params.type === "update") {
+                  params.callback(data, false);
+                } else if (params.type === "forward" || params.type === "backward") {
+                  // 对于前向/后向加载，返回空数组表示没有更多数据
+                  params.callback([], false);
+                }
+              },
+            });
+
+            // 添加技术指标
+            indicators.forEach((indicator) => {
+              if (indicator.visible !== false && chartInstance) {
+                chartInstance.createIndicator(indicator.name, indicator.params);
+              }
+            });
+
+          } catch (error) {
+            console.error("Failed to initialize chart:", error);
+            if (window.showError) {
+              window.showError("Failed to initialize chart: " + error.message);
+            }
+          }
+        }, [data, mergedConfig, indicators, isValidData, theme]);
+
+        // 更新图表数据
+        const updateChartData = useCallback(() => {
+          if (!chartRef.current || !isValidData) return;
+
+          try {
+            // 使用v10新API更新数据
+            chartRef.current.setDataLoader({
+              getBars: (params) => {
+                if (params.type === "init" || params.type === "update") {
+                  params.callback(data, false);
+                } else if (params.type === "forward" || params.type === "backward") {
+                  params.callback([], false);
+                }
+              },
+            });
+          } catch (error) {
+            console.error("Failed to update chart data:", error);
+          }
+        }, [data, isValidData]);
+
+        // 更新技术指标
+        const updateIndicators = useCallback(() => {
+          if (!chartRef.current) return;
+
+          try {
+            // 先清除所有现有指标
+            indicators.forEach((indicator) => {
+              try {
+                chartRef.current.removeIndicator(indicator.name);
+              } catch (e) {
+                // 指标可能不存在，忽略错误
+              }
+            });
+
+            // 添加新指标
+            indicators.forEach((indicator) => {
+              if (indicator.visible !== false) {
+                chartRef.current.createIndicator(indicator.name, indicator.params);
+              }
+            });
+          } catch (error) {
+            console.error("Failed to update indicators:", error);
+          }
+        }, [indicators]);
+
+        // 更新主题样式
+        const updateTheme = useCallback(() => {
+          if (!chartRef.current) return;
+
+          try {
+            chartRef.current.setStyles({
+              grid: {
+                show: mergedConfig.grid?.show,
+                horizontal: {
+                  show: mergedConfig.grid?.horizontal?.show,
+                  color: theme.grid,
+                },
+                vertical: {
+                  show: mergedConfig.grid?.vertical?.show,
+                  color: theme.grid,
+                },
+              },
+              candle: {
+                type: mergedConfig.candle?.type,
+                bar: {
+                  upColor: theme.candle.up,
+                  downColor: theme.candle.down,
+                  noChangeColor: theme.candle.noChange,
+                },
+              },
+            });
+          } catch (error) {
+            console.error("Failed to update theme:", error);
+          }
+        }, [mergedConfig, theme]);
+
+        // 初始化图表
+        useEffect(() => {
+          if (!isValidData || data.length === 0) {
+            return;
+          }
+
+          const timer = setTimeout(() => {
+            initializeChart();
+          }, 100);
+
+          return () => {
+            clearTimeout(timer);
+          };
+        }, [initializeChart, isValidData, data.length]);
+
+        // 更新数据
+        useEffect(() => {
+          updateChartData();
+        }, [updateChartData]);
+
+        // 更新指标
+        useEffect(() => {
+          updateIndicators();
+        }, [updateIndicators]);
+
+        // 更新主题
+        useEffect(() => {
+          updateTheme();
+        }, [updateTheme]);
+
+        // 组件卸载时清理
+        useEffect(() => {
+          return () => {
+            if (chartRef.current && containerRef.current) {
+              try {
+                klinecharts.dispose(containerRef.current);
+                chartRef.current = null;
+              } catch (error) {
+                console.error("Failed to dispose chart:", error);
+              }
+            }
+          };
+        }, []);
+
+        // 响应式处理
+        const handleResize = useCallback(() => {
+          if (!chartRef.current || !responsive) return;
+
+          try {
+            // 重新调整图表大小
+            chartRef.current.resize();
+          } catch (error) {
+            console.error("Failed to resize chart:", error);
+          }
+        }, [responsive]);
+
+        const resizeRef = useResizeObserver(handleResize);
+
+        // 错误处理
+        if (!isValidData) {
+          return (
+            <div
+              id={id}
+              className={`dash-kline-chart-error ${className}`}
+              style={{
+                ...style,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: theme.background,
+                color: theme.text,
+                border: `1px solid ${theme.grid}`,
+                borderRadius: "4px",
+                padding: "20px",
+                minHeight: "400px",
+              }}
+            >
+              <div>
+                <h3>数据格式错误</h3>
+                <p>
+                  请确保数据格式正确，包含 timestamp、open、high、low、close
+                  字段
+                </p>
+              </div>
+            </div>
+          );
+        }
+
+        return (
+          <div
+            id={id}
+            className={`dash-kline-chart ${className}`}
+            style={{
+              ...style,
+              backgroundColor: theme.background,
+              width: "100%",
+              height: "500px",
+            }}
+            ref={responsive ? resizeRef : undefined}
+          >
+            <div
+              ref={containerRef}
+              style={{
+                width: "100%",
+                height: "100%",
+                minHeight: "400px",
+              }}
+            />
+          </div>
+        );
+      };
+
+      // 主应用组件
+      const App = () => {
+        const [data, setData] = useState([]);
+        const [config, setConfig] = useState({ theme: "light" });
+        const [indicators, setIndicators] = useState([]);
+
+        useEffect(() => {
+          // 初始化数据
+          setData(generateTestData(100));
+        }, []);
+
+        const showError = (message) => {
+          const errorLog = document.getElementById("error-log");
+          errorLog.innerHTML = `<div class="error">${message}</div>`;
+          setTimeout(() => {
+            errorLog.innerHTML = "";
+          }, 5000);
+        };
+
+        const showInfo = (message) => {
+          const errorLog = document.getElementById("error-log");
+          errorLog.innerHTML = `<div class="info">${message}</div>`;
+          setTimeout(() => {
+            errorLog.innerHTML = "";
+          }, 3000);
+        };
+
+        // 事件处理
+        useEffect(() => {
+          const lightThemeBtn = document.getElementById("lightTheme");
+          const darkThemeBtn = document.getElementById("darkTheme");
+          const addMABtn = document.getElementById("addMA");
+          const addEMABtn = document.getElementById("addEMA");
+          const refreshBtn = document.getElementById("refresh");
+
+          const handleLightTheme = () => {
+            setConfig({ theme: "light" });
+            lightThemeBtn.classList.add("active");
+            darkThemeBtn.classList.remove("active");
+            showInfo("切换到浅色主题");
+          };
+
+          const handleDarkTheme = () => {
+            setConfig({ theme: "dark" });
+            darkThemeBtn.classList.add("active");
+            lightThemeBtn.classList.remove("active");
+            showInfo("切换到深色主题");
+          };
+
+          const handleAddMA = () => {
+            setIndicators((prev) => [
+              ...prev.filter((i) => i.name !== "MA"),
+              { name: "MA", params: [5, 10, 20], visible: true },
+            ]);
+            showInfo("添加移动平均线指标");
+          };
+
+          const handleAddEMA = () => {
+            setIndicators((prev) => [
+              ...prev.filter((i) => i.name !== "EMA"),
+              { name: "EMA", params: [12, 26], visible: true },
+            ]);
+            showInfo("添加指数移动平均线指标");
+          };
+
+          const handleRefresh = () => {
+            setData(generateTestData(100));
+            showInfo("刷新测试数据");
+          };
+
+          lightThemeBtn.addEventListener("click", handleLightTheme);
+          darkThemeBtn.addEventListener("click", handleDarkTheme);
+          addMABtn.addEventListener("click", handleAddMA);
+          addEMABtn.addEventListener("click", handleAddEMA);
+          refreshBtn.addEventListener("click", handleRefresh);
+
+          return () => {
+            lightThemeBtn.removeEventListener("click", handleLightTheme);
+            darkThemeBtn.removeEventListener("click", handleDarkTheme);
+            addMABtn.removeEventListener("click", handleAddMA);
+            addEMABtn.removeEventListener("click", handleAddEMA);
+            refreshBtn.removeEventListener("click", handleRefresh);
+          };
+        }, []);
+
+        // 全局错误处理
+        window.showError = showError;
+
+        return (
+          <DashKLineChart
+            id="test-chart"
+            data={data}
+            config={config}
+            indicators={indicators}
+            style={{ width: "100%", height: "500px" }}
+            responsive={true}
+          />
+        );
+      };
+
+      // 渲染应用
+      const root = ReactDOM.createRoot(document.getElementById("chart-root"));
+      root.render(<App />);
+
+      // 库加载检查
+      window.addEventListener("load", () => {
+        setTimeout(() => {
+          if (!window.klinecharts) {
+            if (window.showError) {
+              window.showError("KLineCharts 库未加载成功");
+            }
+          } else {
+            console.log("KLineCharts 库加载成功，版本: " + (window.klinecharts.version || "unknown"));
+          }
+        }, 1000);
+      });
+    </script>
+  </body>
+</html>

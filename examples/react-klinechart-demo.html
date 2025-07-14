@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>React KLineChart Demo - v10</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 30px;
+      }
+      .chart-container {
+        width: 100%;
+        height: 500px;
+        margin: 20px 0;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+      .controls {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+      }
+      button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        background: #007bff;
+        color: white;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background-color 0.2s;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+      button.secondary {
+        background: #6c757d;
+      }
+      button.secondary:hover {
+        background: #545b62;
+      }
+      .info {
+        background: #e7f3ff;
+        border: 1px solid #b3d4fc;
+        padding: 15px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>React KLineChart Demo (v10)</h1>
+
+      <div class="info">
+        <strong>说明：</strong>这是一个使用KLineChart
+        v10接口的简单React示例，展示了基本的K线图功能。
+      </div>
+
+      <div class="controls">
+        <button id="refreshData">刷新数据</button>
+        <button id="toggleTheme" class="secondary">切换主题</button>
+        <button id="addMA" class="secondary">添加MA指标</button>
+        <button id="removeMA" class="secondary">移除MA指标</button>
+      </div>
+
+      <div id="chart-root"></div>
+    </div>
+
+    <!-- 加载KLineChart库 -->
+    <script src="./klinecharts.min.js"></script>
+
+    <!-- 加载React -->
+    <script
+      crossorigin
+      src="https://unpkg.com/react@18/umd/react.development.js"
+    ></script>
+    <script
+      crossorigin
+      src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
+    ></script>
+
+    <!-- 加载Babel进行JSX转换 -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script type="text/babel">
+      const { useState, useEffect, useRef } = React;
+
+      // 生成示例数据
+      const generateSampleData = (count = 50) => {
+        const data = [];
+        let timestamp = Date.now() - count * 24 * 60 * 60 * 1000;
+        let price = 100;
+
+        for (let i = 0; i < count; i++) {
+          const change = (Math.random() - 0.5) * 4;
+          price += change;
+
+          const open = price;
+          const high = Math.max(price + Math.random() * 2, price);
+          const low = Math.min(price - Math.random() * 2, price);
+          const close = low + Math.random() * (high - low);
+
+          // 确保数据格式正确
+          const klineData = {
+            timestamp: timestamp + i * 24 * 60 * 60 * 1000,
+            open: Number(open.toFixed(2)),
+            high: Number(high.toFixed(2)),
+            low: Number(low.toFixed(2)),
+            close: Number(close.toFixed(2)),
+            volume: Math.floor(Math.random() * 10000) + 1000,
+          };
+
+          // 验证数据有效性
+          if (
+            klineData.high >= klineData.low &&
+            klineData.open >= klineData.low &&
+            klineData.open <= klineData.high &&
+            klineData.close >= klineData.low &&
+            klineData.close <= klineData.high
+          ) {
+            data.push(klineData);
+          }
+
+          price = close;
+        }
+
+        console.log("生成的数据样本:", data.slice(0, 3));
+        return data;
+      };
+
+      // KLineChart React组件
+      const KLineChart = ({ data, theme = "light" }) => {
+        const chartRef = useRef(null);
+        const chartInstanceRef = useRef(null);
+        const [hasMA, setHasMA] = useState(false);
+
+        // 初始化图表
+        useEffect(() => {
+          if (!chartRef.current) {
+            console.error("图表容器未找到");
+            return;
+          }
+
+          if (!window.klinecharts) {
+            console.error("KLineChart库未加载");
+            return;
+          }
+
+          console.log("开始初始化图表", { dataLength: data.length });
+
+          try {
+            // 销毁旧图表
+            if (chartInstanceRef.current) {
+              klinecharts.dispose(chartRef.current);
+            }
+
+            // 创建新图表
+            const chart = klinecharts.init(chartRef.current);
+            if (!chart) {
+              console.error("图表初始化失败");
+              return;
+            }
+
+            chartInstanceRef.current = chart;
+            console.log("图表创建成功");
+
+            // 设置Symbol和Period（v10必需）
+            chart.setSymbol({ ticker: "DEMO" });
+            chart.setPeriod({ span: 1, type: "day" });
+
+            // 设置数据加载器（v10新API）
+            chart.setDataLoader({
+              getBars: ({ callback }) => {
+                console.log("数据加载器被调用", { dataLength: data.length });
+                // v10需要传递hasMore参数
+                callback(data, false);
+              },
+            });
+
+            // 应用主题样式
+            applyTheme(chart, theme);
+            console.log("图表初始化完成");
+          } catch (error) {
+            console.error("图表初始化出错:", error);
+          }
+
+          return () => {
+            if (chartInstanceRef.current) {
+              try {
+                klinecharts.dispose(chartRef.current);
+              } catch (error) {
+                console.error("图表销毁出错:", error);
+              }
+            }
+          };
+        }, [data, theme]);
+
+        // 应用主题
+        const applyTheme = (chart, currentTheme) => {
+          const styles =
+            currentTheme === "dark"
+              ? {
+                  grid: {
+                    horizontal: { color: "#333" },
+                    vertical: { color: "#333" },
+                  },
+                  candle: {
+                    bar: {
+                      upColor: "#26a69a",
+                      downColor: "#ef5350",
+                    },
+                  },
+                  xAxis: {
+                    axisLine: { color: "#666" },
+                    tickText: { color: "#999" },
+                  },
+                  yAxis: {
+                    axisLine: { color: "#666" },
+                    tickText: { color: "#999" },
+                  },
+                }
+              : {
+                  grid: {
+                    horizontal: { color: "#e0e0e0" },
+                    vertical: { color: "#e0e0e0" },
+                  },
+                  candle: {
+                    bar: {
+                      upColor: "#26a69a",
+                      downColor: "#ef5350",
+                    },
+                  },
+                  xAxis: {
+                    axisLine: { color: "#ddd" },
+                    tickText: { color: "#666" },
+                  },
+                  yAxis: {
+                    axisLine: { color: "#ddd" },
+                    tickText: { color: "#666" },
+                  },
+                };
+
+          chart.setStyles(styles);
+        };
+
+        // 添加MA指标
+        const addMA = () => {
+          if (chartInstanceRef.current && !hasMA) {
+            chartInstanceRef.current.createIndicator("MA", [5, 10, 20]);
+            setHasMA(true);
+          }
+        };
+
+        // 移除MA指标
+        const removeMA = () => {
+          if (chartInstanceRef.current && hasMA) {
+            chartInstanceRef.current.removeIndicator("MA");
+            setHasMA(false);
+          }
+        };
+
+        // 暴露方法给父组件
+        useEffect(() => {
+          window.chartActions = {
+            addMA,
+            removeMA,
+          };
+        }, [hasMA]);
+
+        return (
+          <div
+            className="chart-container"
+            ref={chartRef}
+            style={{
+              backgroundColor: theme === "dark" ? "#1a1a1a" : "#ffffff",
+              width: "100%",
+              height: "500px",
+            }}
+          />
+        );
+      };
+
+      // 主应用组件
+      const App = () => {
+        const [data, setData] = useState([]);
+        const [theme, setTheme] = useState("light");
+
+        // 初始化数据
+        useEffect(() => {
+          setData(generateSampleData(50));
+        }, []);
+
+        // 刷新数据
+        const refreshData = () => {
+          setData(generateSampleData(50));
+        };
+
+        // 切换主题
+        const toggleTheme = () => {
+          setTheme((prev) => (prev === "light" ? "dark" : "light"));
+        };
+
+        // 添加MA指标
+        const addMA = () => {
+          if (window.chartActions) {
+            window.chartActions.addMA();
+          }
+        };
+
+        // 移除MA指标
+        const removeMA = () => {
+          if (window.chartActions) {
+            window.chartActions.removeMA();
+          }
+        };
+
+        // 绑定按钮事件
+        useEffect(() => {
+          const refreshBtn = document.getElementById("refreshData");
+          const themeBtn = document.getElementById("toggleTheme");
+          const addMABtn = document.getElementById("addMA");
+          const removeMABtn = document.getElementById("removeMA");
+
+          refreshBtn.onclick = refreshData;
+          themeBtn.onclick = toggleTheme;
+          addMABtn.onclick = addMA;
+          removeMABtn.onclick = removeMA;
+
+          return () => {
+            refreshBtn.onclick = null;
+            themeBtn.onclick = null;
+            addMABtn.onclick = null;
+            removeMABtn.onclick = null;
+          };
+        }, []);
+
+        return <KLineChart data={data} theme={theme} />;
+      };
+
+      // 渲染应用
+      const root = ReactDOM.createRoot(document.getElementById("chart-root"));
+      root.render(<App />);
+
+      // 检查KLineChart库是否加载成功
+      window.addEventListener("load", () => {
+        if (!window.klinecharts) {
+          console.error("KLineChart库未加载成功");
+        } else {
+          console.log("KLineChart库加载成功");
+        }
+      });
+    </script>
+  </body>
+</html>
