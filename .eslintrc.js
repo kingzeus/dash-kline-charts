@@ -32,5 +32,8 @@ module.exports = {
     es6: true,
     node: true,
     jest: true
+  },
+  globals: {
+    klinecharts: 'readonly'
   }
 };

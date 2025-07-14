@@ -1,73 +1,73 @@
-import React, { Component, useMemo, useCallback, useRef, useEffect } from 'react';
+import React, { useMemo, useCallback, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
 // 使用全局的klinecharts对象（通过UMD加载）
-const getKlineCharts = () => {
-    if (typeof window !== 'undefined' && window.klinecharts) {
-        return window.klinecharts;
-    }
-    console.error('KLineCharts not found. Make sure klinecharts.min.js is loaded.');
-    return null;
-};
+// const getKlineCharts = () => {
+//     if (typeof window !== 'undefined' && window.klinecharts) {
+//         return window.klinecharts;
+//     }
+//     console.error('KLineCharts not found. Make sure klinecharts.min.js is loaded.');
+//     return null;
+// };
 
 // 延迟获取klinecharts，因为它可能还没有加载
-const getInit = () => {
-    const lib = getKlineCharts();
-    return lib ? lib.init : null;
-};
+// const getInit = () => {
+//     const lib = getKlineCharts();
+//     return lib ? lib.init : null;
+// };
 
-const getDispose = () => {
-    const lib = getKlineCharts();
-    return lib ? lib.dispose : null;
-};
+// const getDispose = () => {
+//     const lib = getKlineCharts();
+//     return lib ? lib.dispose : null;
+// };
 
-// 深度比较工具函数
-const deepEqual = (obj1, obj2) => {
-    if (obj1 === obj2) return true;
+// 深度比较工具函数 - 暂时注释，未来可能使用
+// const deepEqual = (obj1, obj2) => {
+//     if (obj1 === obj2) return true;
+//
+//     if (obj1 == null || obj2 == null) return obj1 === obj2;
+//
+//     if (typeof obj1 !== 'object' || typeof obj2 !== 'object') return obj1 === obj2;
+//
+//     if (Array.isArray(obj1) !== Array.isArray(obj2)) return false;
+//
+//     const keys1 = Object.keys(obj1);
+//     const keys2 = Object.keys(obj2);
+//
+//     if (keys1.length !== keys2.length) return false;
+//
+//     for (let key of keys1) {
+//         if (!keys2.includes(key)) return false;
+//         if (!deepEqual(obj1[key], obj2[key])) return false;
+//     }
+//
+//     return true;
+// };
 
-    if (obj1 == null || obj2 == null) return obj1 === obj2;
+// 防抖函数 - 暂时注释，未来可能使用
+// const debounce = (func, wait) => {
+//     let timeout;
+//     return function executedFunction(...args) {
+//         const later = () => {
+//             clearTimeout(timeout);
+//             func(...args);
+//         };
+//         clearTimeout(timeout);
+//         timeout = setTimeout(later, wait);
+//     };
+// };
 
-    if (typeof obj1 !== 'object' || typeof obj2 !== 'object') return obj1 === obj2;
-
-    if (Array.isArray(obj1) !== Array.isArray(obj2)) return false;
-
-    const keys1 = Object.keys(obj1);
-    const keys2 = Object.keys(obj2);
-
-    if (keys1.length !== keys2.length) return false;
-
-    for (let key of keys1) {
-        if (!keys2.includes(key)) return false;
-        if (!deepEqual(obj1[key], obj2[key])) return false;
-    }
-
-    return true;
-};
-
-// 防抖函数
-const debounce = (func, wait) => {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-};
-
-// 节流函数
-const throttle = (func, limit) => {
-    let inThrottle;
-    return function executedFunction(...args) {
-        if (!inThrottle) {
-            func.apply(this, args);
-            inThrottle = true;
-            setTimeout(() => inThrottle = false, limit);
-        }
-    };
-};
+// 节流函数 - 暂时注释，未来可能使用
+// const throttle = (func, limit) => {
+//     let inThrottle;
+//     return function executedFunction(...args) {
+//         if (!inThrottle) {
+//             func.apply(this, args);
+//             inThrottle = true;
+//             setTimeout(() => inThrottle = false, limit);
+//         }
+//     };
+// };
 
 // 工具函数：数据验证
 const validateKLineData = (data) => {
@@ -163,8 +163,7 @@ const DashKLineChart = ({
     style = {},
     className = '',
     responsive = true,
-    symbol,
-    setProps
+    symbol
 }) => {
     const containerRef = useRef(null);
     const chartRef = useRef(null);
@@ -271,7 +270,7 @@ const DashKLineChart = ({
         } catch (error) {
             console.error('Failed to initialize chart:', error);
         }
-    }, [data, mergedConfig, indicators, isValidData, theme, symbol]);
+    }, [data, mergedConfig, indicators, isValidData, theme, symbol, updateChartStyles, updateChartIndicators]);
 
     // 更新图表数据
     const updateChartData = useCallback(() => {
@@ -463,10 +462,11 @@ const DashKLineChart = ({
 
     // 组件卸载时清理
     useEffect(() => {
+        const container = containerRef.current; // 在 effect 中保存 ref 值
         return () => {
-            if (chartRef.current && containerRef.current) {
+            if (chartRef.current && container) {
                 try {
-                    klinecharts.dispose(containerRef.current);
+                    klinecharts.dispose(container);
                     chartRef.current = null;
                 } catch (error) {
                     console.error('Failed to dispose chart:', error);
@@ -646,13 +646,7 @@ DashKLineChart.propTypes = {
     /**
      * Whether to enable responsive design
      */
-    responsive: PropTypes.bool,
-
-    /**
-     * Dash-assigned callback that should be called to report property changes
-     * to Dash, to make them available for callbacks.
-     */
-    setProps: PropTypes.func
+    responsive: PropTypes.bool
 };
 
 export default DashKLineChart;

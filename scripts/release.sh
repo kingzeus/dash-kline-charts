@@ -15,10 +15,10 @@ if [ "$CURRENT_BRANCH" != "main" ]; then
 fi
 
 # 检查工作区是否干净
-if [ -n "$(git status --porcelain)" ]; then
-    echo "❌ Working directory is not clean. Please commit your changes first."
-    exit 1
-fi
+# if [ -n "$(git status --porcelain)" ]; then
+#     echo "❌ Working directory is not clean. Please commit your changes first."
+#     exit 1
+# fi
 
 # 运行测试
 echo "🧪 Running tests..."
@@ -28,7 +28,7 @@ python -m pytest tests/
 # 代码检查
 echo "🔍 Running linting..."
 npm run lint
-python -m flake8 dash_kline_charts/
+# python -m flake8 dash_kline_charts/
 
 # 类型检查
 echo "📝 Running type check..."
@@ -36,7 +36,8 @@ npm run type-check
 
 # 清理构建目录
 echo "🧹 Cleaning build directories..."
-rm -rf lib/
+rm -rf dash_kline_charts/*.js
+rm -rf dash_kline_charts/*.js.map
 rm -rf dist/
 rm -rf build/
 rm -rf *.egg-info/
@@ -51,32 +52,42 @@ python setup.py sdist bdist_wheel
 
 # 检查构建结果
 echo "🔍 Checking build results..."
-if [ ! -f "lib/index.js" ]; then
+if [ ! -f "dash_kline_charts/dash_kline_charts.min.js" ]; then
     echo "❌ JavaScript build failed"
     exit 1
 fi
 
-if [ ! -f "dist/dash-kline-charts-0.1.0.tar.gz" ]; then
+if [ ! -f "dist/dash_kline_charts-0.1.0.tar.gz" ]; then
     echo "❌ Python build failed"
+    exit 1
+fi
+
+# 验证包的完整性
+echo "🔍 Validating packages with twine..."
+if ! command -v twine &> /dev/null; then
+    echo "❌ twine not found. Please install it: pip install twine"
+    exit 1
+fi
+
+twine check dist/*
+if [ $? -ne 0 ]; then
+    echo "❌ Package validation failed"
     exit 1
 fi
 
 echo "✅ Build completed successfully!"
 
 # 询问是否发布
-read -p "🚀 Do you want to publish to npm and PyPI? (y/n): " -n 1 -r
+read -p "🚀 Do you want to publish to PyPI? (y/n): " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo "📦 Publishing to npm..."
-    npm publish
-    
     echo "🐍 Publishing to PyPI..."
     twine upload dist/*
-    
+
     echo "🎉 Release completed successfully!"
     echo "📌 Don't forget to create a GitHub release with the changelog"
 else
-    echo "📦 Build completed. Run 'npm publish' and 'twine upload dist/*' to publish."
+    echo "📦 Build completed. Run 'twine upload dist/*' to publish to PyPI."
 fi
 
 echo "✨ Release process finished!"

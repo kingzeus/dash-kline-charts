@@ -7,6 +7,28 @@ import { render, screen, cleanup, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import DashKLineChart from '../src/lib/components/DashKLineChart.react';
 
+// Mock ResizeObserver
+class MockResizeObserver {
+    constructor(callback) {
+        this.callback = callback;
+    }
+
+    observe() {
+        // Mock implementation
+    }
+
+    unobserve() {
+        // Mock implementation
+    }
+
+    disconnect() {
+        // Mock implementation
+    }
+}
+
+// Set up ResizeObserver mock
+global.ResizeObserver = MockResizeObserver;
+
 // Mock KLineChart library
 const mockChart = {
     setSymbol: jest.fn(),
@@ -15,6 +37,13 @@ const mockChart = {
     setStyles: jest.fn(),
     removeIndicator: jest.fn(),
     createIndicator: jest.fn(),
+    resize: jest.fn(),
+    applyNewData: jest.fn(),
+    updateData: jest.fn(),
+    subscribeAction: jest.fn(),
+    unsubscribeAction: jest.fn(),
+    getConvertPictureUrl: jest.fn(),
+    dispose: jest.fn()
 };
 
 const mockKLineCharts = {
@@ -28,15 +57,25 @@ Object.defineProperty(window, 'klinecharts', {
     writable: true,
 });
 
+// Mock console.error to avoid noise in tests
+const originalConsoleError = console.error;
+beforeAll(() => {
+    console.error = jest.fn();
+});
+
+afterAll(() => {
+    console.error = originalConsoleError;
+});
+
 describe('DashKLineChart', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        // Ensure window.klinecharts is available
+        window.klinecharts = mockKLineCharts;
     });
 
     afterEach(() => {
         cleanup();
-        // Reset window.klinecharts
-        window.klinecharts = mockKLineCharts;
     });
 
     const sampleData = [
@@ -149,13 +188,14 @@ describe('DashKLineChart', () => {
         expect(propTypes).toHaveProperty('style');
         expect(propTypes).toHaveProperty('className');
         expect(propTypes).toHaveProperty('responsive');
-        expect(propTypes).toHaveProperty('setProps');
     });
 
     test('handles empty data gracefully', () => {
         render(<DashKLineChart id="empty-chart" data={[]} />);
         // 验证组件能正确渲染，不会崩溃
         expect(document.getElementById('empty-chart')).toBeInTheDocument();
+        // 验证显示空数据状态
+        expect(document.getElementById('empty-chart')).toHaveClass('dash-kline-chart-empty');
     });
 
     test('handles missing volume in data', () => {
@@ -200,7 +240,72 @@ describe('DashKLineChart', () => {
             { name: 'MACD', params: [12, 26, 9] }
         ];
 
-            render(<DashKLineChart id="multi-indicators-chart" indicators={indicators} />);
-            expect(document.getElementById('multi-indicators-chart')).toBeInTheDocument();
+        render(<DashKLineChart id="multi-indicators-chart" indicators={indicators} />);
+        expect(document.getElementById('multi-indicators-chart')).toBeInTheDocument();
+    });
+
+    test('initializes KLineChart correctly', async () => {
+        render(<DashKLineChart id="init-chart" data={sampleData} />);
+
+        // 等待异步初始化完成（组件中有100ms的延迟）
+        await waitFor(() => {
+            expect(mockKLineCharts.init).toHaveBeenCalled();
+        }, { timeout: 200 });
+    });
+
+    test('calls chart methods when data changes', async () => {
+        const { rerender } = render(<DashKLineChart id="update-chart" data={sampleData} />);
+
+        // 等待初始化完成
+        await waitFor(() => {
+            expect(mockKLineCharts.init).toHaveBeenCalled();
+        }, { timeout: 200 });
+
+        // 清除mock调用记录
+        jest.clearAllMocks();
+
+        // 重新渲染新数据
+        const newData = [...sampleData, {
+            timestamp: 1609632000000,
+            open: 110,
+            high: 120,
+            low: 105,
+            close: 115,
+            volume: 1500
+        }];
+
+        rerender(<DashKLineChart id="update-chart" data={newData} />);
+
+        // 等待新的初始化调用
+        await waitFor(() => {
+            expect(mockKLineCharts.init).toHaveBeenCalled();
+        }, { timeout: 200 });
+    });
+
+    test('handles invalid data gracefully', () => {
+        const invalidData = [
+            {
+                timestamp: 1609459200000,
+                open: 100,
+                high: 90, // high < low 应该是无效的
+                low: 110,
+                close: 105,
+                volume: 1000
+            }
+        ];
+
+        render(<DashKLineChart id="invalid-chart" data={invalidData} />);
+        const chartElement = document.getElementById('invalid-chart');
+        expect(chartElement).toBeInTheDocument();
+        // 应该显示错误状态，而不是正常的图表
+        expect(chartElement.textContent).toContain('数据格式错误');
+    });
+
+    test('renders empty state when no data provided', () => {
+        render(<DashKLineChart id="no-data-chart" />);
+        const chartElement = document.getElementById('no-data-chart');
+        expect(chartElement).toBeInTheDocument();
+        expect(chartElement).toHaveClass('dash-kline-chart-empty');
+        expect(chartElement.textContent).toContain('暂无数据');
     });
 });

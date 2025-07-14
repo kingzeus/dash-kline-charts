@@ -18,12 +18,12 @@ def get_version():
 setup(
     name="dash-kline-charts",
     version=get_version(),
-    author="Dash KLineChart Team",
-    author_email="your-email@example.com",
-    description="A Dash component for displaying financial charts using KLineChart",
+    author="Yefei Fan",
+    author_email="fyfcnc@hotmail.com",
+    description="A Dash component for displaying financial charts using KLineCharts",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/your-username/dash-kline-charts",
+    url="https://github.com/kingzeus/dash-kline-charts",
     packages=find_packages(),
     include_package_data=True,
     classifiers=[
@@ -54,6 +54,7 @@ setup(
             "black>=21.0.0",
             "flake8>=3.8.0",
             "mypy>=0.910",
+            "twine>=6.0.0",
         ],
     },
     package_data={
@@ -62,11 +63,6 @@ setup(
             "*.js",
             "*.css",
             "*.map",
-        ],
-    },
-    entry_points={
-        "console_scripts": [
-            "dash-kline-charts=dash_kline_charts.cli:main",
         ],
     },
 )
