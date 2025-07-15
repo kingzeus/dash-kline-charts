@@ -335,6 +335,8 @@ const DashKLineChart = ({
         if (!chartInstance) return;
 
         try {
+            const candleType = config.candle?.type ?? 'candle_solid';
+            console.log("candleType", candleType)
             const styles = {
                 grid: {
                     show: config.grid?.show ?? true,
@@ -350,7 +352,7 @@ const DashKLineChart = ({
                     }
                 },
                 candle: {
-                    type: config.candle?.type ?? 'candle_solid',
+                    type: candleType,
                     bar: {
                         upColor: themeConfig.candle.up,
                         downColor: themeConfig.candle.down,
@@ -361,6 +363,21 @@ const DashKLineChart = ({
                         upWickColor: themeConfig.candle.up,
                         downWickColor: themeConfig.candle.down,
                         noChangeWickColor: themeConfig.candle.noChange
+                    },
+                    tooltip: {
+                        title: {
+                            show: config.candle?.tooltip?.title?.show ?? true,
+                        },
+                        legend: {
+                            template: config.candle?.tooltip?.legend?.template ?? [
+                                { title: 'time', value: '{time}' },
+                                { title: 'open', value: '{open}' },
+                                { title: 'high', value: '{high}' },
+                                { title: 'low', value: '{low}' },
+                                { title: 'close', value: '{close}' },
+                                { title: 'volume', value: '{volume}' }
+                            ]
+                        }
                     }
                 },
                 crosshair: {
@@ -654,6 +671,11 @@ DashKLineChart.propTypes = {
      *   - vertical (object): 垂直网格线设置
      * - candle (object): 蜡烛图/图表类型配置
      *   - type (string): 图表类型（'candle_solid', 'area', 'line'）
+     *   - tooltip (object): 图例提示<br/>
+     *      - title (object): 标题配置<br/>
+     *         - show (boolean): 是否显示标题<br/>
+     *      - legend (object): 图例设置<br/>
+     *         - template (array): 图例模板，包含多个对象，每个对象有 title 和 value 字段<br/>
      * - crosshair (object): 十字线配置
      *   - show (boolean): 是否显示十字线
      *   - horizontal/vertical (object): 十字线设置
