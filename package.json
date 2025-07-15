@@ -1,6 +1,6 @@
 {
     "name": "dash-kline-charts",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "description": "A Dash component for displaying financial charts using KLineCharts",
     "main": "build/index.js",
     "scripts": {
