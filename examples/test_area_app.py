@@ -67,8 +67,24 @@ app.layout = html.Div(
                                 },
                             },
                         },
-                        "crosshair": {"show": True},
                     },
+                    indicators=[
+                        {
+                            "name": "MA",
+                            "isStack": False,
+                            "paneOptions": {
+                                "id": "candle_pane",
+                            },
+                            "calcParams": [60, 250],
+                        },
+                        {
+                            "name": "EMA",
+                            "isStack": True,
+                            "paneOptions": {
+                                "id": "candle_pane",
+                            },
+                        },
+                    ],
                     style={"width": "100%", "height": "400px"},
                 ),
             ],

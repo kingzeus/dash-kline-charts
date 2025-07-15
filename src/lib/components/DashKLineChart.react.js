@@ -455,9 +455,14 @@ const DashKLineChart = ({
                     if (indicator.visible !== false) {
                         try {
                             chartInstance.createIndicator(
-                                indicator.name,
-                                true,
-                                { params: indicator.params }
+                                {
+                                    name: indicator.name,
+                                    calcParams: indicator?.calcParams,
+                                },
+                                indicator?.isStack,
+                                {
+                                    id: indicator?.paneOptions?.id,
+                                }
                             );
                         } catch (error) {
                             console.warn(`Failed to create indicator ${indicator.name}:`, error);
@@ -696,12 +701,17 @@ DashKLineChart.propTypes = {
         /**
      * 技术指标配置。每个指标项应该是一个包含以下字段的对象：<br/>
      * - name (string): 指标名称（例如：'MA', 'RSI', 'MACD'）<br/>
-     * - params (array): 指标参数<br/>
+     * - calcParams (array): 指标参数<br/>
+     * - isStack (boolean, 可选): 是否堆叠<br/>
+     * - paneOptions (object, 可选): 指标面板选项<br/>
+     *      - id (string, 可选): 指标面板 ID<br/>
      * - visible (boolean, 可选): 指标是否可见
      */
     indicators: PropTypes.arrayOf(PropTypes.shape({
         name: PropTypes.string.isRequired,
-        params: PropTypes.array,
+        isStack: PropTypes.bool,
+        paneOptions: PropTypes.object,
+        calcParams: PropTypes.array,
         visible: PropTypes.bool
     })),
 
