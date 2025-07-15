@@ -336,7 +336,6 @@ const DashKLineChart = ({
 
         try {
             const candleType = config.candle?.type ?? 'candle_solid';
-            console.log("candleType", candleType)
             const styles = {
                 grid: {
                     show: config.grid?.show ?? true,
@@ -642,13 +641,13 @@ DashKLineChart.propTypes = {
      */
     id: PropTypes.string,
 
-    /**
-     * OHLC 格式的 K 线数据。每个数据项应该是一个包含以下字段的对象：
-     * - timestamp (number): 时间戳（毫秒）
-     * - open (number): 开盘价, 面积图时可忽略
-     * - high (number): 最高价, 面积图时可忽略
-     * - low (number): 最低价, 面积图时可忽略
-     * - close (number): 收盘价
+        /**
+     * OHLC 格式的 K 线数据。每个数据项应该是一个包含以下字段的对象：<br/>
+     * - timestamp (number): 时间戳（毫秒）<br/>
+     * - open (number): 开盘价, 面积图时可忽略<br/>
+     * - high (number): 最高价, 面积图时可忽略<br/>
+     * - low (number): 最低价, 面积图时可忽略<br/>
+     * - close (number): 收盘价<br/>
      * - volume (number, 可选): 交易量
      */
     data: PropTypes.arrayOf(PropTypes.shape({
@@ -660,32 +659,30 @@ DashKLineChart.propTypes = {
         volume: PropTypes.number
     })),
 
-    /**
-     * 图表配置选项。此对象允许您自定义图表外观和行为。
-     *
-     * 可用选项：
-     * - theme (string): 图表主题（'light' 或 'dark'）。默认：'light'
-     * - grid (object): 网格配置
-     *   - show (boolean): 是否显示网格线
-     *   - horizontal (object): 水平网格线设置
-     *   - vertical (object): 垂直网格线设置
-     * - candle (object): 蜡烛图/图表类型配置
-     *   - type (string): 图表类型（'candle_solid', 'area', 'line'）
+        /**
+     * 图表配置选项。此对象允许您自定义图表外观和行为。<br/><br/>
+     * 可用选项：<br/>
+     * - theme (string): 图表主题（'light' 或 'dark'）。默认：'light'<br/>
+     * - grid (object): 网格配置<br/>
+     *   - show (boolean): 是否显示网格线<br/>
+     *   - horizontal (object): 水平网格线设置<br/>
+     *   - vertical (object): 垂直网格线设置<br/>
+     * - candle (object): 蜡烛图/图表类型配置<br/>
+     *   - type (string): 图表类型（'candle_solid', 'area', 'line'）<br/>
      *   - tooltip (object): 图例提示<br/>
-     *      - title (object): 标题配置<br/>
-     *         - show (boolean): 是否显示标题<br/>
-     *      - legend (object): 图例设置<br/>
-     *         - template (array): 图例模板，包含多个对象，每个对象有 title 和 value 字段<br/>
-     * - crosshair (object): 十字线配置
-     *   - show (boolean): 是否显示十字线
-     *   - horizontal/vertical (object): 十字线设置
-     * - yAxis (object): Y 轴配置
-     *   - show (boolean): 是否显示 Y 轴
-     *   - position (string): Y 轴位置（'left' 或 'right'）
-     * - xAxis (object): X 轴配置
-     *   - show (boolean): 是否显示 X 轴
-     *   - position (string): X 轴位置（'top' 或 'bottom'）
-     *
+     *     - title (object): 标题配置<br/>
+     *       - show (boolean): 是否显示标题<br/>
+     *     - legend (object): 图例设置<br/>
+     *       - template (array): 图例模板，包含多个对象，每个对象有 title 和 value 字段<br/>
+     * - crosshair (object): 十字线配置<br/>
+     *   - show (boolean): 是否显示十字线<br/>
+     *   - horizontal/vertical (object): 十字线设置<br/>
+     * - yAxis (object): Y 轴配置<br/>
+     *   - show (boolean): 是否显示 Y 轴<br/>
+     *   - position (string): Y 轴位置（'left' 或 'right'）<br/>
+     * - xAxis (object): X 轴配置<br/>
+     *   - show (boolean): 是否显示 X 轴<br/>
+     *   - position (string): X 轴位置（'top' 或 'bottom'）<br/><br/>
      * @example
      * config={
      *   'theme': 'dark',
@@ -696,10 +693,10 @@ DashKLineChart.propTypes = {
      */
     config: PropTypes.object,
 
-    /**
-     * 技术指标配置。每个指标项应该是一个包含以下字段的对象：
-     * - name (string): 指标名称（例如：'MA', 'RSI', 'MACD'）
-     * - params (array): 指标参数
+        /**
+     * 技术指标配置。每个指标项应该是一个包含以下字段的对象：<br/>
+     * - name (string): 指标名称（例如：'MA', 'RSI', 'MACD'）<br/>
+     * - params (array): 指标参数<br/>
      * - visible (boolean, 可选): 指标是否可见
      */
     indicators: PropTypes.arrayOf(PropTypes.shape({
