@@ -458,6 +458,7 @@ const DashKLineChart = ({
                                 {
                                     name: indicator.name,
                                     calcParams: indicator?.calcParams,
+                                    styles: indicator?.styles,
                                 },
                                 indicator?.isStack,
                                 {
@@ -705,6 +706,10 @@ DashKLineChart.propTypes = {
      * - isStack (boolean, 可选): 是否堆叠<br/>
      * - paneOptions (object, 可选): 指标面板选项<br/>
      *      - id (string, 可选): 指标面板 ID<br/>
+     * - styles (object, 可选): 指标样式<br/>
+     *      - lines (array, 可选): 指标线样式<br/>
+     *          - color (string, 可选): 指标线颜色<br/>
+     *          - style (string, 可选): 指标线样式（'solid' 或 'dashed'）<br/>
      * - visible (boolean, 可选): 指标是否可见
      */
     indicators: PropTypes.arrayOf(PropTypes.shape({
@@ -712,6 +717,7 @@ DashKLineChart.propTypes = {
         isStack: PropTypes.bool,
         paneOptions: PropTypes.object,
         calcParams: PropTypes.array,
+        styles: PropTypes.object,
         visible: PropTypes.bool
     })),
 

@@ -75,7 +75,13 @@ app.layout = html.Div(
                             "paneOptions": {
                                 "id": "candle_pane",
                             },
-                            "calcParams": [60, 250],
+                            "calcParams": [6, 20],
+                            "styles": {
+                                "lines": [
+                                    {"color": "#8fd3e8", "style": "dashed"},
+                                    {"color": "#edafda", "style": "dashed"},
+                                ]
+                            },
                         },
                         {
                             "name": "EMA",
